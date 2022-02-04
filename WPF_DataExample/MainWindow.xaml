@@ -1,0 +1,46 @@
+﻿<Window x:Class="WPF_DataExample.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WPF_DataExample"
+        mc:Ignorable="d"
+        Title="Mitarbeiterverwaltung" Height="450" Width="800">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="11*"/>
+            <ColumnDefinition Width="14*"/>
+        </Grid.ColumnDefinitions>
+        <DockPanel Grid.ColumnSpan="2">
+            <Menu DockPanel.Dock="Top">
+                <MenuItem Header="Tabellen">
+                    <MenuItem Header="Mitarbeiter"  Click="MenuItem_Mitarbeiter_Click"/>
+                    <MenuItem Header="Beruf" Click="MenuItem_Beruf_Click"/>
+                    <MenuItem Header="Abteilung" Click="MenuItem_Abteilung_Click" />
+                    <MenuItem Header="Standort"/>
+                    <MenuItem Header="Land" />
+                    <MenuItem Header="Region" />
+                    <Separator />
+                    <MenuItem Header="_Exit" Click="MenuItem_Exit_Click"/>
+                </MenuItem>
+                <MenuItem Header="Neu">
+                    <MenuItem Header="Mitarbeiter hinzufügen"  Click="MenuItem_MitarbeiterNeu_Click"/>
+                </MenuItem>
+            </Menu>
+        </DockPanel>
+        <DataGrid Visibility="Visible" Width="750" Margin="25,31,0,0" x:Name="dataGrid" DataContext="{Binding}" Height="323" VerticalAlignment="Top" HorizontalAlignment="Left" Grid.ColumnSpan="2" CanUserAddRows="False">
+            <DataGrid.Columns>
+                <!-- ... -->
+                <DataGridTemplateColumn Header="">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button Content="Delete" Click="delete_Click">
+                            </Button>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+        <Button x:Name="saveNewMitarbeiter" Visibility="Hidden" Content="Speichern" Click="SaveNewMitarbeiter_Click" Width="70" Height="30" Margin="25,0,0,23" VerticalAlignment="Bottom" HorizontalAlignment="Left"/>
+    </Grid>
+</Window>
