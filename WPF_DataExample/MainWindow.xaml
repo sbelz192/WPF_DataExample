@@ -28,7 +28,7 @@
                 </MenuItem>
             </Menu>
         </DockPanel>
-        <DataGrid Visibility="Visible" Width="750" Margin="25,31,0,0" x:Name="dataGrid" DataContext="{Binding}" Height="323" VerticalAlignment="Top" HorizontalAlignment="Left" Grid.ColumnSpan="2" CanUserAddRows="False">
+        <DataGrid Visibility="Hidden" Width="750" Margin="25,31,0,0" x:Name="dataGrid" DataContext="{Binding}" Height="323" VerticalAlignment="Top" HorizontalAlignment="Left" Grid.ColumnSpan="2" CanUserAddRows="False">
             <DataGrid.Columns>
                 <!-- ... -->
                 <DataGridTemplateColumn Header="">
@@ -41,6 +41,55 @@
                 </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
+        <DataGrid Visibility="Hidden" Width="413" Margin="10,31,0,0" x:Name="dataGridNeu" DataContext="{Binding}" Height="323" VerticalAlignment="Top" HorizontalAlignment="Left" CanUserAddRows="False" Grid.Column="1">
+        </DataGrid>
         <Button x:Name="saveNewMitarbeiter" Visibility="Hidden" Content="Speichern" Click="SaveNewMitarbeiter_Click" Width="70" Height="30" Margin="25,0,0,23" VerticalAlignment="Bottom" HorizontalAlignment="Left"/>
+        
+        <StackPanel x:Name="SP_Mitarbeiter_Neu_Labels" Visibility="Hidden" Margin="25,31,197,80">
+            <Label Height="30" Width="100">
+                Vorname
+            </Label>
+            <Label Height="30" Width="100">
+                Nachname
+            </Label>
+            <Label Height="30" Width="100">
+                Geburtstag
+            </Label>
+            <Label Height="30" Width="100">
+                Gehalt
+            </Label>
+            <Label Height="30" Width="100">
+                Vorgesetzter
+            </Label>
+            <Label Height="30" Width="100">
+                Abteilung
+            </Label>
+            <Label Height="30" Width="100">
+                Beruf
+            </Label>
+        </StackPanel>
+        <StackPanel x:Name="SP_Mitarbeiter_Neu_Felder" Visibility="Hidden"  Margin="155,31,0,0">
+            <TextBox x:Name="TB_Vorname" Height="30" Width="200">
+                
+            </TextBox>
+            <TextBox x:Name="TB_Nachname" Height="30" Width="200">
+                
+            </TextBox>
+            <TextBox x:Name="TB_Geburtsdatum" Height="30" Width="200">
+                
+            </TextBox>
+            <TextBox x:Name="TB_Gehalt" Height="30" Width="200">
+                
+            </TextBox>
+            <ComboBox x:Name="CB_Vorgesetzter" Height="30" Width="200">
+
+            </ComboBox>
+            <ComboBox x:Name="CB_Abteilung" Height="30" Width="200">
+
+            </ComboBox>
+            <ComboBox x:Name="CB_Beruf" Height="30" Width="200">
+
+            </ComboBox>
+        </StackPanel>
     </Grid>
 </Window>
