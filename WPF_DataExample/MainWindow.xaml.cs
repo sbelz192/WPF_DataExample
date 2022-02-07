@@ -102,8 +102,7 @@ namespace WPF_DataExample
             dataGrid.Visibility = Visibility.Visible;
             dataGridNeu.Visibility = Visibility.Hidden;
             saveNewMitarbeiter.Visibility = Visibility.Hidden;
-            SP_Mitarbeiter_Neu_Felder.Visibility = Visibility.Hidden;
-            SP_Mitarbeiter_Neu_Labels.Visibility = Visibility.Hidden;
+            Grid_Mitarbeiter_Neu.Visibility = Visibility.Hidden;
             FillDataGrid(Tabletype.Mitarbeiter, dataGrid);
         }
 
@@ -112,8 +111,7 @@ namespace WPF_DataExample
             dataGrid.Visibility = Visibility.Visible;
             dataGridNeu.Visibility = Visibility.Hidden;
             saveNewMitarbeiter.Visibility = Visibility.Hidden;
-            SP_Mitarbeiter_Neu_Felder.Visibility = Visibility.Hidden;
-            SP_Mitarbeiter_Neu_Labels.Visibility = Visibility.Hidden;
+            Grid_Mitarbeiter_Neu.Visibility = Visibility.Hidden;
             FillDataGrid(Tabletype.Beruf, dataGrid);
         }
 
@@ -122,8 +120,7 @@ namespace WPF_DataExample
             dataGrid.Visibility = Visibility.Visible;
             dataGridNeu.Visibility = Visibility.Hidden;
             saveNewMitarbeiter.Visibility = Visibility.Hidden;
-            SP_Mitarbeiter_Neu_Felder.Visibility = Visibility.Hidden;
-            SP_Mitarbeiter_Neu_Labels.Visibility = Visibility.Hidden;
+            Grid_Mitarbeiter_Neu.Visibility = Visibility.Hidden;
             FillDataGrid(Tabletype.Abteilung, dataGrid);
 
         }
@@ -138,8 +135,7 @@ namespace WPF_DataExample
             dataGrid.Visibility = Visibility.Hidden;
             dataGridNeu.Visibility = Visibility.Visible;
             saveNewMitarbeiter.Visibility = Visibility.Visible;
-            SP_Mitarbeiter_Neu_Felder.Visibility = Visibility.Visible;
-            SP_Mitarbeiter_Neu_Labels.Visibility = Visibility.Visible;
+            Grid_Mitarbeiter_Neu.Visibility = Visibility.Visible;
 
             // Comboboxen füllen:
             string connstr = "Server=127.0.0.1;Port=3306;Uid=root;Pwd=;database=mv2";
@@ -315,5 +311,9 @@ namespace WPF_DataExample
 
         }
 
+        private void DatePicker_Geburtsdatum_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
+        {
+            TB_Geburtsdatum.Text = String.Format("{0:yyyy-MM-dd}", DatePicker_Geburtsdatum.SelectedDate);
+        }
     }
 }

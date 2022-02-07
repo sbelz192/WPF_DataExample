@@ -3,16 +3,12 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:WPF_DataExample"
         mc:Ignorable="d"
         Title="Mitarbeiterverwaltung" Height="450" Width="800">
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="11*"/>
-            <ColumnDefinition Width="14*"/>
-        </Grid.ColumnDefinitions>
-        <DockPanel Grid.ColumnSpan="2">
-            <Menu DockPanel.Dock="Top">
+        <!--Top-Menu-Bar:-->
+        <DockPanel>
+            <Menu DockPanel.Dock="Top" VerticalAlignment="Top" Height="25">
                 <MenuItem Header="Tabellen">
                     <MenuItem Header="Mitarbeiter"  Click="MenuItem_Mitarbeiter_Click"/>
                     <MenuItem Header="Beruf" Click="MenuItem_Beruf_Click"/>
@@ -28,10 +24,10 @@
                 </MenuItem>
             </Menu>
         </DockPanel>
-        <DataGrid Visibility="Hidden" Width="750" Margin="25,31,0,0" x:Name="dataGrid" DataContext="{Binding}" Height="323" VerticalAlignment="Top" HorizontalAlignment="Left" Grid.ColumnSpan="2" CanUserAddRows="False">
+        <!--Main DataGrid-->
+        <DataGrid Visibility="Hidden" Margin="0,25,0,0"  x:Name="dataGrid" DataContext="{Binding}" CanUserAddRows="False" >
             <DataGrid.Columns>
-                <!-- ... -->
-                <DataGridTemplateColumn Header="">
+                <DataGridTemplateColumn>
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <Button Content="Delete" Click="delete_Click">
@@ -41,55 +37,62 @@
                 </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
-        <DataGrid Visibility="Hidden" Width="413" Margin="10,31,0,0" x:Name="dataGridNeu" DataContext="{Binding}" Height="323" VerticalAlignment="Top" HorizontalAlignment="Left" CanUserAddRows="False" Grid.Column="1">
-        </DataGrid>
-        <Button x:Name="saveNewMitarbeiter" Visibility="Hidden" Content="Speichern" Click="SaveNewMitarbeiter_Click" Width="70" Height="30" Margin="25,0,0,23" VerticalAlignment="Bottom" HorizontalAlignment="Left"/>
-        
-        <StackPanel x:Name="SP_Mitarbeiter_Neu_Labels" Visibility="Hidden" Margin="25,31,197,80">
-            <Label Height="30" Width="100">
+        <Grid x:Name="Grid_Mitarbeiter_Neu" Margin="0,25,0,0"  Visibility="Hidden">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="20*" />
+                <ColumnDefinition Width="20*" />
+                <ColumnDefinition Width="60*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="30"/>
+                <RowDefinition Height="30"/>
+                <RowDefinition Height="30"/>
+                <RowDefinition Height="30"/>
+                <RowDefinition Height="30"/>
+                <RowDefinition Height="30"/>
+                <RowDefinition Height="30"/>
+                <RowDefinition Height="30"/>
+            </Grid.RowDefinitions>
+            
+            <!-- Column 0 Rows-->
+            <Label Grid.Row="0">
                 Vorname
             </Label>
-            <Label Height="30" Width="100">
+            <Label Grid.Row="1">
                 Nachname
             </Label>
-            <Label Height="30" Width="100">
+            <Label Grid.Row="2">
                 Geburtstag
             </Label>
-            <Label Height="30" Width="100">
+            <Label Grid.Row="3">
                 Gehalt
             </Label>
-            <Label Height="30" Width="100">
+            <Label Grid.Row="4">
                 Vorgesetzter
             </Label>
-            <Label Height="30" Width="100">
+            <Label Grid.Row="5">
                 Abteilung
             </Label>
-            <Label Height="30" Width="100">
+            <Label Grid.Row="6">
                 Beruf
             </Label>
-        </StackPanel>
-        <StackPanel x:Name="SP_Mitarbeiter_Neu_Felder" Visibility="Hidden"  Margin="155,31,0,0">
-            <TextBox x:Name="TB_Vorname" Height="30" Width="200">
-                
-            </TextBox>
-            <TextBox x:Name="TB_Nachname" Height="30" Width="200">
-                
-            </TextBox>
-            <TextBox x:Name="TB_Geburtsdatum" Height="30" Width="200">
-                
-            </TextBox>
-            <TextBox x:Name="TB_Gehalt" Height="30" Width="200">
-                
-            </TextBox>
-            <ComboBox x:Name="CB_Vorgesetzter" Height="30" Width="200">
-
-            </ComboBox>
-            <ComboBox x:Name="CB_Abteilung" Height="30" Width="200">
-
-            </ComboBox>
-            <ComboBox x:Name="CB_Beruf" Height="30" Width="200">
-
-            </ComboBox>
-        </StackPanel>
+            
+            <!-- Column 1 Rows-->
+            <TextBox Grid.Row="0" x:Name="TB_Vorname" Grid.Column="1"/>
+            <TextBox Grid.Row="1" x:Name="TB_Nachname" Grid.Column="1" />
+            <TextBox Visibility="Hidden" Grid.Row="2" Grid.Column="2" IsReadOnly="True" x:Name="TB_Geburtsdatum"/>
+            <DatePicker Grid.Row="2" Grid.Column="1"  x:Name="DatePicker_Geburtsdatum" SelectedDateFormat="Short" SelectedDateChanged="DatePicker_Geburtsdatum_SelectedDateChanged"/>
+            <TextBox x:Name="TB_Gehalt" Grid.Row="3" Grid.Column="1"/>
+            <ComboBox x:Name="CB_Vorgesetzter" Grid.Row="4" Grid.Column="1"/>
+            <ComboBox x:Name="CB_Abteilung" Grid.Row="5" Grid.Column="1"/>
+            <ComboBox x:Name="CB_Beruf" Grid.Row="6" Grid.Column="1"/>
+            
+            <!--Save Button-->
+            <Button Grid.Row="7" x:Name="saveNewMitarbeiter" Visibility="Visible" Content="Speichern" Click="SaveNewMitarbeiter_Click"/>
+            
+            <!--Secondary DataGrid-->
+            <DataGrid Grid.Column="2" Grid.RowSpan="10" Visibility="Visible" x:Name="dataGridNeu" DataContext="{Binding}" CanUserAddRows="False">
+            </DataGrid>
+        </Grid>
     </Grid>
 </Window>
