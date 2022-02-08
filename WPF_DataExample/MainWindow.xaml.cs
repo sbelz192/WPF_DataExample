@@ -52,7 +52,7 @@ namespace WPF_DataExample
 
                     using (MySqlCommand cmd = conn.CreateCommand())
                     {
-                        cmd.CommandText = "SELECT * FROM " + tabletype + ";";
+                        cmd.CommandText = "SELECT * FROM " + tabletype.ToString().ToLower() + ";";
                         DataTable dt = new DataTable();
                         MySqlDataAdapter da = new MySqlDataAdapter(cmd);
                         da.Fill(dt);
@@ -96,9 +96,60 @@ namespace WPF_DataExample
             }
             FillDataGrid(Tabletype.Mitarbeiter, dataGrid);
         }
+        public string ReadSingleRowAsStringFormatted(IDataRecord dataRecord)
+        {
+            return String.Format("{0} {1}", dataRecord[0], dataRecord[1]);
+        }
+        public UInt32 ReadSingleRowAsUInt(IDataRecord dataRecord)
+        {
+            return (UInt32)dataRecord[0];
+        }
+        public List<string> ReadSingleRowAsListString(IDataRecord dataRecord)
+        {
+            return new List<string>() { dataRecord[0].ToString(), (string)dataRecord[1], (string)dataRecord[2] };
+        }
+        //TODO: Validierung verbessern!
+        public bool ValidateMitarbeiter(Mitarbeiter M)
+        {
+            if (M.vorname.Length == 0) return false;
+            if (M.nachname.Length == 0) return false;
+            if (M.geb_dat.Length != 10) return false; // Beispiel: 1992-01-29
+            if (M.gehalt.Length == 0) return false;
+            if (M.vorgesetzter_id == 0) return false;
+            if (M.a_id == 0) return false;
+            if (M.b_id == 0) return false;
+            return true;
+        }
 
+        /// <summary>
+        /// Converts an employee object into a format for SQL insert statement values (in between brackets, separated with commas,...).
+        /// </summary>
+        /// <param name="m"></param>
+        /// <returns></returns>
+        public string MitarbeiterToCSVString(Mitarbeiter m)
+        {
+            List<string> s = new List<string>
+            {
+                "\'" + m.vorname + "\'",
+                "\'" + m.nachname + "\'",
+                "\'" + m.geb_dat + "\'",
+                "\'" + m.gehalt + "\'",
+                "\'" + m.vorgesetzter_id + "\'",
+                "\'" + m.a_id + "\'",
+                "\'" + m.b_id + "\'"
+            };
+            return string.Join(',', s);
+        }
+
+        #region Event Listeners:
+
+        private void DatePicker_Geburtsdatum_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
+        {
+            TB_Geburtsdatum.Text = String.Format("{0:yyyy-MM-dd}", DatePicker_Geburtsdatum.SelectedDate);
+        }
         private void MenuItem_Mitarbeiter_Click(object sender, RoutedEventArgs e)
         {
+            DataGrid_Template.Header = Tabletype.Mitarbeiter;
             dataGrid.Visibility = Visibility.Visible;
             dataGridNeu.Visibility = Visibility.Hidden;
             saveNewMitarbeiter.Visibility = Visibility.Hidden;
@@ -108,6 +159,8 @@ namespace WPF_DataExample
 
         private void MenuItem_Beruf_Click(object sender, RoutedEventArgs e)
         {
+            DataGrid_Template.Header = Tabletype.Beruf;
+
             dataGrid.Visibility = Visibility.Visible;
             dataGridNeu.Visibility = Visibility.Hidden;
             saveNewMitarbeiter.Visibility = Visibility.Hidden;
@@ -117,6 +170,7 @@ namespace WPF_DataExample
 
         private void MenuItem_Abteilung_Click(object sender, RoutedEventArgs e)
         {
+            DataGrid_Template.Header = Tabletype.Abteilung;
             dataGrid.Visibility = Visibility.Visible;
             dataGridNeu.Visibility = Visibility.Hidden;
             saveNewMitarbeiter.Visibility = Visibility.Hidden;
@@ -124,6 +178,37 @@ namespace WPF_DataExample
             FillDataGrid(Tabletype.Abteilung, dataGrid);
 
         }
+        private void MenuItem_Standort_Click(object sender, RoutedEventArgs e)
+        {
+            DataGrid_Template.Header = Tabletype.Standort;
+            dataGrid.Visibility = Visibility.Visible;
+            dataGridNeu.Visibility = Visibility.Hidden;
+            saveNewMitarbeiter.Visibility = Visibility.Hidden;
+            Grid_Mitarbeiter_Neu.Visibility = Visibility.Hidden;
+            FillDataGrid(Tabletype.Standort, dataGrid);
+
+        }
+        private void MenuItem_Land_Click(object sender, RoutedEventArgs e)
+        {
+            DataGrid_Template.Header = Tabletype.Land;
+            dataGrid.Visibility = Visibility.Visible;
+            dataGridNeu.Visibility = Visibility.Hidden;
+            saveNewMitarbeiter.Visibility = Visibility.Hidden;
+            Grid_Mitarbeiter_Neu.Visibility = Visibility.Hidden;
+            FillDataGrid(Tabletype.Standort, dataGrid);
+
+        }
+        private void MenuItem_Region_Click(object sender, RoutedEventArgs e)
+        {
+            DataGrid_Template.Header = Tabletype.Region;
+            dataGrid.Visibility = Visibility.Visible;
+            dataGridNeu.Visibility = Visibility.Hidden;
+            saveNewMitarbeiter.Visibility = Visibility.Hidden;
+            Grid_Mitarbeiter_Neu.Visibility = Visibility.Hidden;
+            FillDataGrid(Tabletype.Region, dataGrid);
+
+        }
+
 
         private void MenuItem_Exit_Click(object sender, RoutedEventArgs e)
         {
@@ -151,7 +236,7 @@ namespace WPF_DataExample
                     {
                         while (reader.Read())
                         {
-                            CB_Abteilung.Items.Add(ReadSingleRow(reader));
+                            CB_Abteilung.Items.Add(ReadSingleRowAsStringFormatted(reader));
                         }
                     }
 
@@ -165,7 +250,7 @@ namespace WPF_DataExample
                     {
                         while (reader.Read())
                         {
-                            CB_Beruf.Items.Add(ReadSingleRow(reader));
+                            CB_Beruf.Items.Add(ReadSingleRowAsStringFormatted(reader));
                         }
                     }
                 }
@@ -179,7 +264,7 @@ namespace WPF_DataExample
                     {
                         while (reader.Read())
                         {
-                            vorgesetzte_ids.Add(ReadSingleRow2(reader));
+                            vorgesetzte_ids.Add(ReadSingleRowAsUInt(reader));
                         }
                     }
                 }
@@ -190,9 +275,9 @@ namespace WPF_DataExample
                     {
                         while (reader.Read())
                         {
-                            if (vorgesetzte_ids.Contains(UInt32.Parse(ReadSingleRow3(reader)[0])))
+                            if (vorgesetzte_ids.Contains(UInt32.Parse(ReadSingleRowAsListString(reader)[0])))
                             {
-                                CB_Vorgesetzter.Items.Add(string.Join(' ', ReadSingleRow3(reader)));
+                                CB_Vorgesetzter.Items.Add(string.Join(' ', ReadSingleRowAsListString(reader)));
                             }
                         }
                     }
@@ -201,18 +286,7 @@ namespace WPF_DataExample
             }
             
         }
-        public string ReadSingleRow(IDataRecord dataRecord)
-        {
-            return String.Format("{0} {1}", dataRecord[0], dataRecord[1]);
-        }
-        public UInt32 ReadSingleRow2(IDataRecord dataRecord)
-        {
-            return (UInt32)dataRecord[0];
-        }
-        public List<string> ReadSingleRow3(IDataRecord dataRecord)
-        {
-            return new List<string>() { dataRecord[0].ToString(), (string)dataRecord[1], (string)dataRecord[2]};
-        }
+
         private void SaveNewMitarbeiter_Click(object sender, RoutedEventArgs e)
         {
             string connstr = "Server=127.0.0.1;Port=3306;Uid=root;Pwd=;database=mv2";
@@ -222,19 +296,45 @@ namespace WPF_DataExample
 
                 using (MySqlCommand cmd = conn.CreateCommand())
                 {
-                    Mitarbeiter m = new Mitarbeiter()
+                    if(CB_Vorgesetzter.SelectedValue == null || CB_Abteilung.SelectedValue == null || CB_Beruf.SelectedValue == null)
                     {
-                        vorname = TB_Vorname.Text,
-                        nachname = TB_Nachname.Text,
-                        geb_dat = TB_Geburtsdatum.Text,
-                        gehalt = TB_Gehalt.Text,
-                        vorgesetzter_id = UInt32.Parse(CB_Vorgesetzter.SelectedValue.ToString().Split(' ')[0]),
-                        a_id = UInt32.Parse(CB_Abteilung.SelectedValue.ToString().Split(' ')[0]),
-                        b_id = UInt32.Parse(CB_Beruf.SelectedValue.ToString().Split(' ')[0]),
- 
-                    };
-                    cmd.CommandText = "INSERT INTO mitarbeiter (vorname,nachname,geb_dat,gehalt,vorgesetzter_id,a_id,b_id) VALUES(" + MitarbeiterToCSVString(m) + ");";
-                    cmd.ExecuteNonQuery();
+                        MessageBox.Show("Fehlende Auswahl: Vorgesetzter, Abteilung oder Beruf!");
+                    }
+                    else
+                    {
+                        var vid = UInt32.Parse(CB_Vorgesetzter.SelectedValue.ToString().Split(' ')[0]);
+                        var aid = UInt32.Parse(CB_Abteilung.SelectedValue.ToString().Split(' ')[0]);
+                        var bid = UInt32.Parse(CB_Beruf.SelectedValue.ToString().Split(' ')[0]);
+                        Mitarbeiter m = new Mitarbeiter()
+                        {
+                            vorname = TB_Vorname.Text,
+                            nachname = TB_Nachname.Text,
+                            geb_dat = TB_Geburtsdatum.Text,
+                            gehalt = TB_Gehalt.Text,
+                            vorgesetzter_id = vid == 0 ? 0 : vid,
+                            a_id = aid == 0 ? 0 : aid,
+                            b_id = bid == 0 ? 0 : bid
+
+                        };
+                        if (ValidateMitarbeiter(m))
+                        {
+                            cmd.CommandText = "INSERT INTO mitarbeiter (vorname,nachname,geb_dat,gehalt,vorgesetzter_id,a_id,b_id) VALUES(@vn,@nn,@gd,@gh,@vi,@ai,@bi);";
+                            cmd.Parameters.AddWithValue("vn",m.vorname);
+                            cmd.Parameters.AddWithValue("nn", m.nachname);
+                            cmd.Parameters.AddWithValue("gd", m.geb_dat);
+                            cmd.Parameters.AddWithValue("gh", m.gehalt);
+                            cmd.Parameters.AddWithValue("vi", m.vorgesetzter_id);
+                            cmd.Parameters.AddWithValue("ai", m.a_id);
+                            cmd.Parameters.AddWithValue("bi", m.b_id);
+
+                            cmd.ExecuteNonQuery();
+                        }
+                        else
+                        {
+                            MessageBox.Show("Die angegebenen Mitarbeiterdaten können nicht gespeichert werden - sie sind unvollständig oder nicht richtig formatiert.");
+                        }
+                    }
+                    
                 }
                 conn.Close();
             }
@@ -247,41 +347,16 @@ namespace WPF_DataExample
         /// <param name="e"></param>
         private void delete_Click(object sender, RoutedEventArgs e)
         {
-            int i = dataGrid.SelectedIndex;
-            DataRowView v = (DataRowView)dataGrid.Items[i];
-            UInt32 s = (UInt32)v[0];
-            DeleteSelectedMitarbeiter(s);
-        }
-
-        //TODO: Validierung fertig entwickeln!
-        public bool ValidateMitarbeiter(Mitarbeiter M)
-        {
-            if(M.gehalt.Length == 0) return false;
-            if(M.vorname.Length == 0) return false;
-            if(M.nachname.Length == 0) return false;
-
-            return true;
-        }
-
-        /// <summary>
-        /// Converts an employee object into a format for SQL insert statement values (in between brackets, separated with commas,...).
-        /// </summary>
-        /// <param name="m"></param>
-        /// <returns></returns>
-        public string MitarbeiterToCSVString(Mitarbeiter m)
-        {
-            List<string> s = new List<string>
+            if(DataGrid_Template.Header?.ToString() == "Mitarbeiter")
             {
-                "\'" + m.vorname + "\'",
-                "\'" + m.nachname + "\'",
-                "\'" + m.geb_dat + "\'",
-                "\'" + m.gehalt + "\'",
-                "\'" + m.vorgesetzter_id + "\'",
-                "\'" + m.a_id + "\'",
-                "\'" + m.b_id + "\'"
-            };
-            return string.Join(',', s);
+                int i = dataGrid.SelectedIndex;
+                DataRowView v = (DataRowView)dataGrid.Items[i];
+                UInt32 s = (UInt32)v[0];
+                DeleteSelectedMitarbeiter(s);
+            }
+
         }
+        #endregion
 
         /// <summary>
         /// Represents an employee.
@@ -311,9 +386,5 @@ namespace WPF_DataExample
 
         }
 
-        private void DatePicker_Geburtsdatum_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
-        {
-            TB_Geburtsdatum.Text = String.Format("{0:yyyy-MM-dd}", DatePicker_Geburtsdatum.SelectedDate);
-        }
     }
 }

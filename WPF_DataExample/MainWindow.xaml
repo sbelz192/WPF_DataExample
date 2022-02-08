@@ -13,9 +13,9 @@
                     <MenuItem Header="Mitarbeiter"  Click="MenuItem_Mitarbeiter_Click"/>
                     <MenuItem Header="Beruf" Click="MenuItem_Beruf_Click"/>
                     <MenuItem Header="Abteilung" Click="MenuItem_Abteilung_Click" />
-                    <MenuItem Header="Standort"/>
-                    <MenuItem Header="Land" />
-                    <MenuItem Header="Region" />
+                    <MenuItem Header="Standort" Click="MenuItem_Standort_Click"/>
+                    <MenuItem Header="Land" Click="MenuItem_Land_Click"/>
+                    <MenuItem Header="Region" Click="MenuItem_Region_Click"/>
                     <Separator />
                     <MenuItem Header="_Exit" Click="MenuItem_Exit_Click"/>
                 </MenuItem>
@@ -27,7 +27,7 @@
         <!--Main DataGrid-->
         <DataGrid Visibility="Hidden" Margin="0,25,0,0"  x:Name="dataGrid" DataContext="{Binding}" CanUserAddRows="False" >
             <DataGrid.Columns>
-                <DataGridTemplateColumn>
+                <DataGridTemplateColumn x:Name="DataGrid_Template" Header="">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <Button Content="Delete" Click="delete_Click">
