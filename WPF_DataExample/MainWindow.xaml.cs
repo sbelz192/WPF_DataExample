@@ -62,9 +62,9 @@ namespace WPF_DataExample
                     conn.Close();
                 }
             }
-            catch (Exception ex)
+            catch (MySqlException ex)
             {
-                MessageBox.Show(ex.ToString());
+                MessageBox.Show(ex.Message);
             }
         }
         /// <summary>
@@ -90,9 +90,9 @@ namespace WPF_DataExample
                     conn.Close();
                 }
             }
-            catch (Exception ex)
+            catch (MySqlException ex)
             {
-                MessageBox.Show(ex.ToString());
+                MessageBox.Show(ex.Message);
             }
             FillDataGrid(Tabletype.Mitarbeiter, dataGrid);
         }
@@ -224,121 +224,133 @@ namespace WPF_DataExample
 
             // Comboboxen füllen:
             string connstr = "Server=127.0.0.1;Port=3306;Uid=root;Pwd=;database=mv2";
-            using (MySqlConnection conn = new MySqlConnection(connstr))
+            try
             {
-                conn.Open();
-
-                // Abteilung:
-                using (MySqlCommand cmd = conn.CreateCommand())
+                using (MySqlConnection conn = new MySqlConnection(connstr))
                 {
-                    cmd.CommandText = "SELECT * FROM abteilung WHERE abteilungsleiter IS NOT NULL;";
-                    using (MySqlDataReader reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            CB_Abteilung.Items.Add(ReadSingleRowAsStringFormatted(reader));
-                        }
-                    }
+                    conn.Open();
 
-                }
-
-                // Beruf:
-                using (MySqlCommand cmd = conn.CreateCommand())
-                {
-                    cmd.CommandText = "SELECT b_id,bezeichnung FROM beruf;";
-                    using (MySqlDataReader reader = cmd.ExecuteReader())
+                    // Abteilung:
+                    using (MySqlCommand cmd = conn.CreateCommand())
                     {
-                        while (reader.Read())
+                        cmd.CommandText = "SELECT * FROM abteilung WHERE abteilungsleiter IS NOT NULL;";
+                        using (MySqlDataReader reader = cmd.ExecuteReader())
                         {
-                            CB_Beruf.Items.Add(ReadSingleRowAsStringFormatted(reader));
-                        }
-                    }
-                }
-
-                // Vorgesetzter:
-                List<UInt32> vorgesetzte_ids = new List<UInt32>();
-                using (MySqlCommand cmd = conn.CreateCommand())
-                {
-                    cmd.CommandText = "SELECT abteilungsleiter FROM abteilung WHERE abteilungsleiter IS NOT NULL;";
-                    using (MySqlDataReader reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            vorgesetzte_ids.Add(ReadSingleRowAsUInt(reader));
-                        }
-                    }
-                }
-                using (MySqlCommand cmd = conn.CreateCommand())
-                {
-                    cmd.CommandText = "SELECT m_id,vorname,nachname FROM mitarbeiter;";
-                    using (MySqlDataReader reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            if (vorgesetzte_ids.Contains(UInt32.Parse(ReadSingleRowAsListString(reader)[0])))
+                            while (reader.Read())
                             {
-                                CB_Vorgesetzter.Items.Add(string.Join(' ', ReadSingleRowAsListString(reader)));
+                                CB_Abteilung.Items.Add(ReadSingleRowAsStringFormatted(reader));
+                            }
+                        }
+
+                    }
+
+                    // Beruf:
+                    using (MySqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = "SELECT b_id,bezeichnung FROM beruf;";
+                        using (MySqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                CB_Beruf.Items.Add(ReadSingleRowAsStringFormatted(reader));
                             }
                         }
                     }
+
+                    // Vorgesetzter:
+                    List<UInt32> vorgesetzte_ids = new List<UInt32>();
+                    using (MySqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = "SELECT abteilungsleiter FROM abteilung WHERE abteilungsleiter IS NOT NULL;";
+                        using (MySqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                vorgesetzte_ids.Add(ReadSingleRowAsUInt(reader));
+                            }
+                        }
+                    }
+                    using (MySqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = "SELECT m_id,vorname,nachname FROM mitarbeiter;";
+                        using (MySqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                if (vorgesetzte_ids.Contains(UInt32.Parse(ReadSingleRowAsListString(reader)[0])))
+                                {
+                                    CB_Vorgesetzter.Items.Add(string.Join(' ', ReadSingleRowAsListString(reader)));
+                                }
+                            }
+                        }
+                    }
+                    conn.Close();
                 }
-                conn.Close();
             }
-            
+            catch (MySqlException ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
         }
 
         private void SaveNewMitarbeiter_Click(object sender, RoutedEventArgs e)
         {
             string connstr = "Server=127.0.0.1;Port=3306;Uid=root;Pwd=;database=mv2";
-            using (MySqlConnection conn = new MySqlConnection(connstr))
+            try
             {
-                conn.Open();
-
-                using (MySqlCommand cmd = conn.CreateCommand())
+                using (MySqlConnection conn = new MySqlConnection(connstr))
                 {
-                    if(CB_Vorgesetzter.SelectedValue == null || CB_Abteilung.SelectedValue == null || CB_Beruf.SelectedValue == null)
-                    {
-                        MessageBox.Show("Fehlende Auswahl: Vorgesetzter, Abteilung oder Beruf!");
-                    }
-                    else
-                    {
-                        var vid = UInt32.Parse(CB_Vorgesetzter.SelectedValue.ToString().Split(' ')[0]);
-                        var aid = UInt32.Parse(CB_Abteilung.SelectedValue.ToString().Split(' ')[0]);
-                        var bid = UInt32.Parse(CB_Beruf.SelectedValue.ToString().Split(' ')[0]);
-                        Mitarbeiter m = new Mitarbeiter()
-                        {
-                            vorname = TB_Vorname.Text,
-                            nachname = TB_Nachname.Text,
-                            geb_dat = TB_Geburtsdatum.Text,
-                            gehalt = TB_Gehalt.Text,
-                            vorgesetzter_id = vid == 0 ? 0 : vid,
-                            a_id = aid == 0 ? 0 : aid,
-                            b_id = bid == 0 ? 0 : bid
+                    conn.Open();
 
-                        };
-                        if (ValidateMitarbeiter(m))
+                    using (MySqlCommand cmd = conn.CreateCommand())
+                    {
+                        if (CB_Vorgesetzter.SelectedValue == null || CB_Abteilung.SelectedValue == null || CB_Beruf.SelectedValue == null)
                         {
-                            cmd.CommandText = "INSERT INTO mitarbeiter (vorname,nachname,geb_dat,gehalt,vorgesetzter_id,a_id,b_id) VALUES(@vn,@nn,@gd,@gh,@vi,@ai,@bi);";
-                            cmd.Parameters.AddWithValue("vn",m.vorname);
-                            cmd.Parameters.AddWithValue("nn", m.nachname);
-                            cmd.Parameters.AddWithValue("gd", m.geb_dat);
-                            cmd.Parameters.AddWithValue("gh", m.gehalt);
-                            cmd.Parameters.AddWithValue("vi", m.vorgesetzter_id);
-                            cmd.Parameters.AddWithValue("ai", m.a_id);
-                            cmd.Parameters.AddWithValue("bi", m.b_id);
-
-                            cmd.ExecuteNonQuery();
+                            MessageBox.Show("Fehlende Auswahl: Vorgesetzter, Abteilung oder Beruf!");
                         }
                         else
                         {
-                            MessageBox.Show("Die angegebenen Mitarbeiterdaten können nicht gespeichert werden - sie sind unvollständig oder nicht richtig formatiert.");
+                            var vid = UInt32.Parse(CB_Vorgesetzter.SelectedValue.ToString().Split(' ')[0]);
+                            var aid = UInt32.Parse(CB_Abteilung.SelectedValue.ToString().Split(' ')[0]);
+                            var bid = UInt32.Parse(CB_Beruf.SelectedValue.ToString().Split(' ')[0]);
+                            Mitarbeiter m = new Mitarbeiter()
+                            {
+                                vorname = TB_Vorname.Text,
+                                nachname = TB_Nachname.Text,
+                                geb_dat = TB_Geburtsdatum.Text,
+                                gehalt = TB_Gehalt.Text,
+                                vorgesetzter_id = vid == 0 ? 0 : vid,
+                                a_id = aid == 0 ? 0 : aid,
+                                b_id = bid == 0 ? 0 : bid
+
+                            };
+                            if (ValidateMitarbeiter(m))
+                            {
+                                cmd.CommandText = "INSERT INTO mitarbeiter (vorname,nachname,geb_dat,gehalt,vorgesetzter_id,a_id,b_id) VALUES(@vn,@nn,@gd,@gh,@vi,@ai,@bi);";
+                                cmd.Parameters.AddWithValue("vn", m.vorname);
+                                cmd.Parameters.AddWithValue("nn", m.nachname);
+                                cmd.Parameters.AddWithValue("gd", m.geb_dat);
+                                cmd.Parameters.AddWithValue("gh", m.gehalt);
+                                cmd.Parameters.AddWithValue("vi", m.vorgesetzter_id);
+                                cmd.Parameters.AddWithValue("ai", m.a_id);
+                                cmd.Parameters.AddWithValue("bi", m.b_id);
+
+                                cmd.ExecuteNonQuery();
+                            }
+                            else
+                            {
+                                MessageBox.Show("Die angegebenen Mitarbeiterdaten können nicht gespeichert werden - sie sind unvollständig oder nicht richtig formatiert.");
+                            }
                         }
+
                     }
-                    
+                    conn.Close();
                 }
-                conn.Close();
+                FillDataGrid(Tabletype.Mitarbeiter, dataGridNeu);
+            }catch (MySqlException ex)
+            {
+                MessageBox.Show(ex.Message);
             }
-            FillDataGrid(Tabletype.Mitarbeiter, dataGridNeu);
         }
         /// <summary>
         /// Deletes the selected employee identified by 'm_id' from the database.
