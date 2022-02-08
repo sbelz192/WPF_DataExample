@@ -1,22 +1,12 @@
-﻿using System;
+﻿// NOTE:add nuget mysql.data.dll
+
+using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.Data;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using MySql.Data.MySqlClient;
 
 namespace WPF_DataExample
@@ -27,11 +17,6 @@ namespace WPF_DataExample
     /// </summary>
     public partial class MainWindow : Window
     {
-        /*mysql
-        * 
-        * 1. add nuget mysql.data.dll（desktop application）
-        * 2. using MySql.Data.MySqlClient;
-        */
         public MainWindow()
         {
             InitializeComponent();
@@ -45,7 +30,7 @@ namespace WPF_DataExample
         {
             try
             {
-                string connstr = "Server=127.0.0.1;Port=3306;Uid=root;Pwd=;database=mv2";
+                string connstr = "Server=127.0.0.1;Port=3306;Uid=root;Pwd=;database=mv2;convert zero datetime=True";
                 using (MySqlConnection conn = new MySqlConnection(connstr))
                 {
                     conn.Open();
@@ -68,6 +53,69 @@ namespace WPF_DataExample
             }
         }
         /// <summary>
+        /// Versucht, den im Formular eingetragenen Mitarbeiter in der Datenbank zu speichern.
+        /// </summary>
+        public void SaveCreatedMitarbeiter()
+        {
+            string connstr = "Server=127.0.0.1;Port=3306;Uid=root;Pwd=;database=mv2;convert zero datetime=True";
+            try
+            {
+                using (MySqlConnection conn = new MySqlConnection(connstr))
+                {
+                    conn.Open();
+
+                    using (MySqlCommand cmd = conn.CreateCommand())
+                    {
+                        if (CB_Vorgesetzter.SelectedValue == null || CB_Abteilung.SelectedValue == null || CB_Beruf.SelectedValue == null)
+                        {
+                            MessageBox.Show("Fehlende Auswahl: Vorgesetzter, Abteilung oder Beruf!");
+                        }
+                        else
+                        {
+                            var vid = UInt32.Parse(CB_Vorgesetzter.SelectedValue.ToString().Split(' ')[0]);
+                            var aid = UInt32.Parse(CB_Abteilung.SelectedValue.ToString().Split(' ')[0]);
+                            var bid = UInt32.Parse(CB_Beruf.SelectedValue.ToString().Split(' ')[0]);
+                            Mitarbeiter m = new Mitarbeiter()
+                            {
+                                vorname = TB_Vorname.Text,
+                                nachname = TB_Nachname.Text,
+                                geb_dat = TB_Geburtsdatum.Text,
+                                gehalt = TB_Gehalt.Text,
+                                vorgesetzter_id = vid == 0 ? 0 : vid,
+                                a_id = aid == 0 ? 0 : aid,
+                                b_id = bid == 0 ? 0 : bid
+
+                            };
+                            if (ValidateMitarbeiter(m))
+                            {
+                                cmd.CommandText = "INSERT INTO mitarbeiter (vorname,nachname,geb_dat,gehalt,vorgesetzter_id,a_id,b_id) VALUES(@vn,@nn,@gd,@gh,@vi,@ai,@bi);";
+                                cmd.Parameters.AddWithValue("@vn", m.vorname);
+                                cmd.Parameters.AddWithValue("@nn", m.nachname);
+                                cmd.Parameters.AddWithValue("@gd", m.geb_dat);
+                                cmd.Parameters.AddWithValue("@gh", m.gehalt);
+                                cmd.Parameters.AddWithValue("@vi", m.vorgesetzter_id);
+                                cmd.Parameters.AddWithValue("@ai", m.a_id);
+                                cmd.Parameters.AddWithValue("@bi", m.b_id);
+
+                                cmd.ExecuteNonQuery();
+                            }
+                            else
+                            {
+                                MessageBox.Show("Die angegebenen Mitarbeiterdaten können nicht gespeichert werden - sie sind unvollständig oder nicht richtig formatiert.");
+                            }
+                        }
+
+                    }
+                    conn.Close();
+                }
+                FillDataGrid(Tabletype.Mitarbeiter, dataGridNeu);
+            }
+            catch (MySqlException ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+        /// <summary>
         /// Deletes the selected employee identified by 'm_id' from the database.
         /// </summary>
         /// <param name="m_id"></param>
@@ -75,7 +123,7 @@ namespace WPF_DataExample
         {
             try
             {
-                string connstr = "Server=127.0.0.1;Port=3306;Uid=root;Pwd=;database=mv2";
+                string connstr = "Server=127.0.0.1;Port=3306;Uid=root;Pwd=;database=mv2;convert zero datetime=True";
                 using (MySqlConnection conn = new MySqlConnection(connstr))
                 {
                     conn.Open();
@@ -96,81 +144,118 @@ namespace WPF_DataExample
             }
             FillDataGrid(Tabletype.Mitarbeiter, dataGrid);
         }
+        /// <summary>
+        /// Ändert Daten innerhalb eines Mitarbeiters in der Datenbank permanent.
+        /// </summary>
+        /// <param name="m"></param>
+        public void UpdateSelectedMitarbeiter(Mitarbeiter m)
+        {
+            try
+            {
+                string connstr = "Server=127.0.0.1;Port=3306;Uid=root;Pwd=;database=mv2;convert zero datetime=True";
+                using (MySqlConnection conn = new MySqlConnection(connstr))
+                {
+                    conn.Open();
+
+                    using (MySqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = "UPDATE mitarbeiter SET vorname = @vn, nachname = @nn, geb_dat = @gd, gehalt = @gh, a_id = @ai, b_id = @bi WHERE m_id =" + m.m_id + ";";
+                        cmd.Parameters.AddWithValue("@vn", m.vorname);
+                        cmd.Parameters.AddWithValue("@nn", m.nachname);
+                        cmd.Parameters.AddWithValue("@gd", m.geb_dat);
+                        cmd.Parameters.AddWithValue("@gh", m.gehalt);
+                        cmd.Parameters.AddWithValue("@ai", m.a_id);
+                        cmd.Parameters.AddWithValue("@bi", m.b_id);
+                        Debug.WriteLine("MySQL table mitarbeiter: " + cmd.ExecuteNonQuery() + " rows affected!");
+                    }
+
+                    conn.Close();
+                }
+            }
+            catch (MySqlException ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+            FillDataGrid(Tabletype.Mitarbeiter, dataGrid);
+        }
+        //TODO: Update-Methoden für andere Tabellen erstellen
+
+        /// <summary>
+        /// Helper-Methode zum formatieren eines IDataRecord in einen String mit dem Format: "{0} {1}".
+        /// </summary>
+        /// <param name="dataRecord"></param>
+        /// <returns></returns>
         public string ReadSingleRowAsStringFormatted(IDataRecord dataRecord)
         {
             return String.Format("{0} {1}", dataRecord[0], dataRecord[1]);
         }
+        /// <summary>
+        /// Helper-Methode zum formatieren eines IDataRecord in einen UInt32".
+        /// </summary>
+        /// <param name="dataRecord"></param>
+        /// <returns></returns>
         public UInt32 ReadSingleRowAsUInt(IDataRecord dataRecord)
         {
             return (UInt32)dataRecord[0];
         }
+        /// <summary>
+        /// Helper-Methode zum formatieren eines IDataRecord in eine List<string> mit dem Format{dataRecord[1],dataRecord[2]}".
+        /// </summary>
+        /// <param name="dataRecord"></param>
+        /// <returns></returns>
         public List<string> ReadSingleRowAsListString(IDataRecord dataRecord)
         {
             return new List<string>() { dataRecord[0].ToString(), (string)dataRecord[1], (string)dataRecord[2] };
         }
+        
         //TODO: Validierung verbessern!
+        /// <summary>
+        /// Validiert einen Mitarbeiter für die Datenbank.
+        /// </summary>
+        /// <param name="M"></param>
+        /// <returns></returns>
         public bool ValidateMitarbeiter(Mitarbeiter M)
         {
-            if (M.vorname.Length == 0) return false;
-            if (M.nachname.Length == 0) return false;
-            if (M.geb_dat.Length != 10) return false; // Beispiel: 1992-01-29
-            if (M.gehalt.Length == 0) return false;
-            if (M.vorgesetzter_id == 0) return false;
-            if (M.a_id == 0) return false;
-            if (M.b_id == 0) return false;
+            if (M.vorname.Length == 0) { Debug.WriteLine(M.vorname + " fehlerhaft!"); return false; }
+            if (M.nachname.Length == 0) { Debug.WriteLine(M.nachname + " fehlerhaft!"); return false; }
+            if (M.geb_dat.Length != 10) { Debug.WriteLine(M.geb_dat + " fehlerhaft!"); return false; } // Beispiel: 1992-01-29
+            if (M.gehalt.Length == 0) { Debug.WriteLine(M.gehalt + " fehlerhaft!"); return false; }
+            if (M.vorgesetzter_id == 0) { Debug.WriteLine(M.vorgesetzter_id + " fehlerhaft!"); return false; }
+            if (M.a_id == 0) { Debug.WriteLine(M.a_id + " fehlerhaft!"); return false; }
+            if (M.b_id == 0) { Debug.WriteLine(M.b_id + " fehlerhaft!"); return false; }
             return true;
-        }
-
-        /// <summary>
-        /// Converts an employee object into a format for SQL insert statement values (in between brackets, separated with commas,...).
-        /// </summary>
-        /// <param name="m"></param>
-        /// <returns></returns>
-        public string MitarbeiterToCSVString(Mitarbeiter m)
-        {
-            List<string> s = new List<string>
-            {
-                "\'" + m.vorname + "\'",
-                "\'" + m.nachname + "\'",
-                "\'" + m.geb_dat + "\'",
-                "\'" + m.gehalt + "\'",
-                "\'" + m.vorgesetzter_id + "\'",
-                "\'" + m.a_id + "\'",
-                "\'" + m.b_id + "\'"
-            };
-            return string.Join(',', s);
         }
 
         #region Event Listeners:
 
         private void DatePicker_Geburtsdatum_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
         {
-            TB_Geburtsdatum.Text = String.Format("{0:yyyy-MM-dd}", DatePicker_Geburtsdatum.SelectedDate);
+            TB_Geburtsdatum.Text = DatePicker_Geburtsdatum.SelectedDate?.ToString("yyyy-MM-dd");
         }
         private void MenuItem_Mitarbeiter_Click(object sender, RoutedEventArgs e)
         {
-            DataGrid_Template.Header = Tabletype.Mitarbeiter;
+            DataGrid_Template_Delete.Header = Tabletype.Mitarbeiter;
+            DataGrid_Template_Update.Header = Tabletype.Mitarbeiter;
             dataGrid.Visibility = Visibility.Visible;
             dataGridNeu.Visibility = Visibility.Hidden;
             saveNewMitarbeiter.Visibility = Visibility.Hidden;
             Grid_Mitarbeiter_Neu.Visibility = Visibility.Hidden;
             FillDataGrid(Tabletype.Mitarbeiter, dataGrid);
         }
-
         private void MenuItem_Beruf_Click(object sender, RoutedEventArgs e)
         {
-            DataGrid_Template.Header = Tabletype.Beruf;
-
+            DataGrid_Template_Delete.Header = Tabletype.Beruf;
+            DataGrid_Template_Update.Header = Tabletype.Beruf;
             dataGrid.Visibility = Visibility.Visible;
             dataGridNeu.Visibility = Visibility.Hidden;
             saveNewMitarbeiter.Visibility = Visibility.Hidden;
             Grid_Mitarbeiter_Neu.Visibility = Visibility.Hidden;
             FillDataGrid(Tabletype.Beruf, dataGrid);
         }
-
         private void MenuItem_Abteilung_Click(object sender, RoutedEventArgs e)
         {
-            DataGrid_Template.Header = Tabletype.Abteilung;
+            DataGrid_Template_Delete.Header = Tabletype.Abteilung;
+            DataGrid_Template_Update.Header = Tabletype.Abteilung;
             dataGrid.Visibility = Visibility.Visible;
             dataGridNeu.Visibility = Visibility.Hidden;
             saveNewMitarbeiter.Visibility = Visibility.Hidden;
@@ -180,7 +265,8 @@ namespace WPF_DataExample
         }
         private void MenuItem_Standort_Click(object sender, RoutedEventArgs e)
         {
-            DataGrid_Template.Header = Tabletype.Standort;
+            DataGrid_Template_Delete.Header = Tabletype.Standort;
+            DataGrid_Template_Update.Header = Tabletype.Standort;
             dataGrid.Visibility = Visibility.Visible;
             dataGridNeu.Visibility = Visibility.Hidden;
             saveNewMitarbeiter.Visibility = Visibility.Hidden;
@@ -190,7 +276,8 @@ namespace WPF_DataExample
         }
         private void MenuItem_Land_Click(object sender, RoutedEventArgs e)
         {
-            DataGrid_Template.Header = Tabletype.Land;
+            DataGrid_Template_Delete.Header = Tabletype.Land;
+            DataGrid_Template_Update.Header = Tabletype.Land;
             dataGrid.Visibility = Visibility.Visible;
             dataGridNeu.Visibility = Visibility.Hidden;
             saveNewMitarbeiter.Visibility = Visibility.Hidden;
@@ -200,7 +287,8 @@ namespace WPF_DataExample
         }
         private void MenuItem_Region_Click(object sender, RoutedEventArgs e)
         {
-            DataGrid_Template.Header = Tabletype.Region;
+            DataGrid_Template_Delete.Header = Tabletype.Region;
+            DataGrid_Template_Update.Header = Tabletype.Region;
             dataGrid.Visibility = Visibility.Visible;
             dataGridNeu.Visibility = Visibility.Hidden;
             saveNewMitarbeiter.Visibility = Visibility.Hidden;
@@ -208,13 +296,10 @@ namespace WPF_DataExample
             FillDataGrid(Tabletype.Region, dataGrid);
 
         }
-
-
         private void MenuItem_Exit_Click(object sender, RoutedEventArgs e)
         {
             Application.Current.Shutdown();
         }
-
         private void MenuItem_MitarbeiterNeu_Click(object sender, RoutedEventArgs e)
         {
             dataGrid.Visibility = Visibility.Hidden;
@@ -223,7 +308,7 @@ namespace WPF_DataExample
             Grid_Mitarbeiter_Neu.Visibility = Visibility.Visible;
 
             // Comboboxen füllen:
-            string connstr = "Server=127.0.0.1;Port=3306;Uid=root;Pwd=;database=mv2";
+            string connstr = "Server=127.0.0.1;Port=3306;Uid=root;Pwd=;database=mv2;convert zero datetime=True";
             try
             {
                 using (MySqlConnection conn = new MySqlConnection(connstr))
@@ -292,74 +377,13 @@ namespace WPF_DataExample
                 MessageBox.Show(ex.Message);
             }
         }
-
         private void SaveNewMitarbeiter_Click(object sender, RoutedEventArgs e)
         {
-            string connstr = "Server=127.0.0.1;Port=3306;Uid=root;Pwd=;database=mv2";
-            try
-            {
-                using (MySqlConnection conn = new MySqlConnection(connstr))
-                {
-                    conn.Open();
-
-                    using (MySqlCommand cmd = conn.CreateCommand())
-                    {
-                        if (CB_Vorgesetzter.SelectedValue == null || CB_Abteilung.SelectedValue == null || CB_Beruf.SelectedValue == null)
-                        {
-                            MessageBox.Show("Fehlende Auswahl: Vorgesetzter, Abteilung oder Beruf!");
-                        }
-                        else
-                        {
-                            var vid = UInt32.Parse(CB_Vorgesetzter.SelectedValue.ToString().Split(' ')[0]);
-                            var aid = UInt32.Parse(CB_Abteilung.SelectedValue.ToString().Split(' ')[0]);
-                            var bid = UInt32.Parse(CB_Beruf.SelectedValue.ToString().Split(' ')[0]);
-                            Mitarbeiter m = new Mitarbeiter()
-                            {
-                                vorname = TB_Vorname.Text,
-                                nachname = TB_Nachname.Text,
-                                geb_dat = TB_Geburtsdatum.Text,
-                                gehalt = TB_Gehalt.Text,
-                                vorgesetzter_id = vid == 0 ? 0 : vid,
-                                a_id = aid == 0 ? 0 : aid,
-                                b_id = bid == 0 ? 0 : bid
-
-                            };
-                            if (ValidateMitarbeiter(m))
-                            {
-                                cmd.CommandText = "INSERT INTO mitarbeiter (vorname,nachname,geb_dat,gehalt,vorgesetzter_id,a_id,b_id) VALUES(@vn,@nn,@gd,@gh,@vi,@ai,@bi);";
-                                cmd.Parameters.AddWithValue("vn", m.vorname);
-                                cmd.Parameters.AddWithValue("nn", m.nachname);
-                                cmd.Parameters.AddWithValue("gd", m.geb_dat);
-                                cmd.Parameters.AddWithValue("gh", m.gehalt);
-                                cmd.Parameters.AddWithValue("vi", m.vorgesetzter_id);
-                                cmd.Parameters.AddWithValue("ai", m.a_id);
-                                cmd.Parameters.AddWithValue("bi", m.b_id);
-
-                                cmd.ExecuteNonQuery();
-                            }
-                            else
-                            {
-                                MessageBox.Show("Die angegebenen Mitarbeiterdaten können nicht gespeichert werden - sie sind unvollständig oder nicht richtig formatiert.");
-                            }
-                        }
-
-                    }
-                    conn.Close();
-                }
-                FillDataGrid(Tabletype.Mitarbeiter, dataGridNeu);
-            }catch (MySqlException ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
+            SaveCreatedMitarbeiter();
         }
-        /// <summary>
-        /// Deletes the selected employee identified by 'm_id' from the database.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void delete_Click(object sender, RoutedEventArgs e)
+        private void Delete_Click(object sender, RoutedEventArgs e)
         {
-            if(DataGrid_Template.Header?.ToString() == "Mitarbeiter")
+            if(DataGrid_Template_Delete.Header?.ToString() == "Mitarbeiter")
             {
                 int i = dataGrid.SelectedIndex;
                 DataRowView v = (DataRowView)dataGrid.Items[i];
@@ -368,8 +392,63 @@ namespace WPF_DataExample
             }
 
         }
+        private void Update_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataGrid_Template_Update.Header?.ToString() == "Mitarbeiter")
+            {
+                int i = dataGrid.SelectedIndex;
+                DataRowView v = (DataRowView)dataGrid.Items[i];
+                UInt32 m_id = (UInt32)v[0];
+                string vorname = (string)v[1];
+                string nachname = (string)v[2];
+                string geb_dat = DateTime.Parse(v[3].ToString()).ToString("yyyy-MM-dd");
+                string gehalt = v[4].ToString();
+                UInt32 vorgesetzter_id = (UInt32)v[5];
+                UInt32 a_id = (UInt32)v[6];
+                UInt32 b_id = (UInt32)v[7];
+                Mitarbeiter m = new Mitarbeiter()
+                {
+                    m_id = m_id,
+                    vorname = vorname,
+                    nachname = nachname,
+                    geb_dat = geb_dat,
+                    gehalt = gehalt,
+                    vorgesetzter_id=vorgesetzter_id,
+                    a_id = a_id,
+                    b_id = b_id
+                };
+                if (ValidateMitarbeiter(m))
+                {
+                    UpdateSelectedMitarbeiter(m);
+                }
+                else
+                {
+                    MessageBox.Show("Update des Mitarbeiters nicht möglich - fehlerhafte Einträge!");
+                }
+            }
+
+        }
+        private void DataGrid_AutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e)
+        {
+            DataGridTextColumn column = e.Column as DataGridTextColumn;
+            if (column.Header.ToString() == "geb_dat")
+            {
+                Binding binding = column.Binding as Binding;
+                binding.StringFormat = "yyyy-MM-dd";
+            }
+        }
+        private void DataGridNeu_AutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e)
+        {
+            DataGridTextColumn column = e.Column as DataGridTextColumn;
+            if (column.Header.ToString() == "geb_dat")
+            {
+                Binding binding = column.Binding as Binding;
+                binding.StringFormat = "yyyy-MM-dd";
+            }
+        }
         #endregion
 
+        #region Objekte, Klassen, Enums:
         /// <summary>
         /// Represents an employee.
         /// </summary>
@@ -386,7 +465,6 @@ namespace WPF_DataExample
             public UInt32 a_id { get; set; }
             public UInt32 b_id { get; set; }
         }
-
         public enum Tabletype
         {
             Mitarbeiter,
@@ -397,6 +475,6 @@ namespace WPF_DataExample
             Region
 
         }
-
+        #endregion
     }
 }
