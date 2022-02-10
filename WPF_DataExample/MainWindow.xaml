@@ -25,9 +25,9 @@
             </Menu>
         </DockPanel>
         <!--Main DataGrid-->
-        <DataGrid Visibility="Hidden" Margin="0,25,0,0"  x:Name="dataGrid" DataContext="{Binding}" AutoGeneratingColumn="DataGrid_AutoGeneratingColumn"  CanUserAddRows="False" >
+        <DataGrid Visibility="Hidden" Margin="0,25,0,0"  x:Name="dataGrid" DataContext="{Binding}" AutoGeneratingColumn="DataGrids_AutoGeneratingColumn"  CanUserAddRows="False" >
             <DataGrid.Columns>
-                <DataGridTemplateColumn x:Name="DataGrid_Template_Delete" Header="">
+                <DataGridTemplateColumn x:Name="DataGrid_Template_Delete" Header="Delete">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <Button Content="Delete" Click="Delete_Click">
@@ -35,7 +35,7 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn x:Name="DataGrid_Template_Update" Header="">
+                <DataGridTemplateColumn x:Name="DataGrid_Template_Update" Header="Update">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <Button Content="Update" Click="Update_Click">
@@ -63,28 +63,14 @@
             </Grid.RowDefinitions>
             
             <!-- Column 0 Rows-->
-            <Label Grid.Row="0">
-                Vorname
-            </Label>
-            <Label Grid.Row="1">
-                Nachname
-            </Label>
-            <Label Grid.Row="2">
-                Geburtstag
-            </Label>
-            <Label Grid.Row="3">
-                Gehalt
-            </Label>
-            <Label Grid.Row="4">
-                Vorgesetzter
-            </Label>
-            <Label Grid.Row="5">
-                Abteilung
-            </Label>
-            <Label Grid.Row="6">
-                Beruf
-            </Label>
-            
+            <Label Grid.Row="0" Content="Vorname"/>
+            <Label Grid.Row="1" Content="Nachname"/>
+            <Label Grid.Row="2" Content="Geburtstag"/>
+            <Label Grid.Row="3" Content="Gehalt"/>
+            <Label Grid.Row="4" Content="Vorgesetzter"/>
+            <Label Grid.Row="5" Content="Abteilung"/>
+            <Label Grid.Row="6" Content="Beruf"/>
+
             <!-- Column 1 Rows-->
             <TextBox Grid.Row="0" x:Name="TB_Vorname" Grid.Column="1"/>
             <TextBox Grid.Row="1" x:Name="TB_Nachname" Grid.Column="1" />
@@ -99,7 +85,7 @@
             <Button Grid.Row="7" x:Name="saveNewMitarbeiter" Visibility="Visible" Content="Speichern" Click="SaveNewMitarbeiter_Click"/>
             
             <!--Secondary DataGrid-->
-            <DataGrid Grid.Column="2" AutoGeneratingColumn="DataGridNeu_AutoGeneratingColumn" Grid.RowSpan="10" Visibility="Visible" x:Name="dataGridNeu" DataContext="{Binding}" CanUserAddRows="False">
+            <DataGrid Grid.Column="2" AutoGeneratingColumn="DataGrids_AutoGeneratingColumn" Grid.RowSpan="10" Visibility="Visible" x:Name="dataGridNeu" DataContext="{Binding}" CanUserAddRows="False">
             </DataGrid>
         </Grid>
     </Grid>

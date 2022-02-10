@@ -21,7 +21,10 @@ namespace WPF_DataExample
         public MainWindow()
         {
             InitializeComponent();
+            currentTable = Tabletype.NONE;
         }
+        // Globale Variablen:
+        public Tabletype currentTable;
 
         #region Methoden / Helper:
         /// <summary>
@@ -100,7 +103,7 @@ namespace WPF_DataExample
                     }
 
                     // Vorgesetzter:
-                    CB_Vorgesetzter.Items.Add(""); // leere Auswahl, falls kein Vorgesetzter vorhanden ist
+                    CB_Vorgesetzter.Items.Add("0 kein Vorgesetzter");
                     List<UInt32> vorgesetzte_ids = new List<UInt32>();
                     using (MySqlCommand cmd = conn.CreateCommand())
                     {
@@ -159,18 +162,18 @@ namespace WPF_DataExample
                                 }
                                 else
                                 {
-                                    var vid = UInt32.Parse(CB_Vorgesetzter.SelectedValue.ToString().Split(' ')[0]);
-                                    var aid = UInt32.Parse(CB_Abteilung.SelectedValue.ToString().Split(' ')[0]);
-                                    var bid = UInt32.Parse(CB_Beruf.SelectedValue.ToString().Split(' ')[0]);
+                                    UInt32 vid = UInt32.Parse(CB_Vorgesetzter.SelectedValue.ToString().Split(' ')[0]);
+                                    UInt32 aid = UInt32.Parse(CB_Abteilung.SelectedValue.ToString().Split(' ')[0]);
+                                    UInt32 bid = UInt32.Parse(CB_Beruf.SelectedValue.ToString().Split(' ')[0]);
                                     Mitarbeiter m = new Mitarbeiter()
                                     {
                                         vorname = TB_Vorname.Text,
                                         nachname = TB_Nachname.Text,
                                         geb_dat = TB_Geburtsdatum.Text,
                                         gehalt = TB_Gehalt.Text,
-                                        vorgesetzter_id = vid == 0 ? 0 : vid,
-                                        a_id = aid == 0 ? 0 : aid,
-                                        b_id = bid == 0 ? 0 : bid
+                                        vorgesetzter_id = vid,
+                                        a_id = aid,
+                                        b_id = bid
 
                                     };
                                     if (ValidateMitarbeiter(m))
@@ -180,7 +183,15 @@ namespace WPF_DataExample
                                         cmd.Parameters.AddWithValue("@nn", m.nachname);
                                         cmd.Parameters.AddWithValue("@gd", m.geb_dat);
                                         cmd.Parameters.AddWithValue("@gh", m.gehalt);
-                                        cmd.Parameters.AddWithValue("@vi", m.vorgesetzter_id);
+                                        string vi = m.vorgesetzter_id == 0 ? null : m.vorgesetzter_id.ToString();
+                                        if(vi == null)
+                                        {
+                                            cmd.Parameters.AddWithValue("@vi", null);
+                                        }
+                                        else
+                                        {
+                                            cmd.Parameters.AddWithValue("@vi", UInt32.Parse(vi));
+                                        }
                                         cmd.Parameters.AddWithValue("@ai", m.a_id);
                                         cmd.Parameters.AddWithValue("@bi", m.b_id);
 
@@ -209,7 +220,7 @@ namespace WPF_DataExample
         /// </summary>
         private void UpdateSelectedRow()
         {
-            if (DataGrid_Template_Update.Header?.ToString() == "Mitarbeiter")
+            if (currentTable == Tabletype.Mitarbeiter)
             {
                 int i = dataGrid.SelectedIndex;
                 DataRowView v = (DataRowView)dataGrid.Items[i];
@@ -218,7 +229,7 @@ namespace WPF_DataExample
                 string nachname = (string)v[2];
                 string geb_dat = DateTime.Parse(v[3].ToString()).ToString("yyyy-MM-dd");
                 string gehalt = v[4].ToString();
-                UInt32 vorgesetzter_id = (UInt32)v[5];
+                UInt32 vorgesetzter_id = v[5] == DBNull.Value ? (UInt32)0 : (UInt32)v[5];
                 UInt32 a_id = (UInt32)v[6];
                 UInt32 b_id = (UInt32)v[7];
                 Mitarbeiter m = new Mitarbeiter()
@@ -296,11 +307,20 @@ namespace WPF_DataExample
 
                     using (MySqlCommand cmd = conn.CreateCommand())
                     {
-                        cmd.CommandText = "UPDATE mitarbeiter SET vorname = @vn, nachname = @nn, geb_dat = @gd, gehalt = @gh, a_id = @ai, b_id = @bi WHERE m_id =" + m.m_id + ";";
+                        cmd.CommandText = "UPDATE mitarbeiter SET vorname = @vn, nachname = @nn, geb_dat = @gd, gehalt = @gh, vorgesetzter_id = @vi, a_id = @ai, b_id = @bi WHERE m_id =" + m.m_id + ";";
                         cmd.Parameters.AddWithValue("@vn", m.vorname);
                         cmd.Parameters.AddWithValue("@nn", m.nachname);
                         cmd.Parameters.AddWithValue("@gd", m.geb_dat);
                         cmd.Parameters.AddWithValue("@gh", m.gehalt);
+                        string vi = m.vorgesetzter_id == 0 ? null : m.vorgesetzter_id.ToString();
+                        if (vi == null)
+                        {
+                            cmd.Parameters.AddWithValue("@vi", null);
+                        }
+                        else
+                        {
+                            cmd.Parameters.AddWithValue("@vi", UInt32.Parse(vi));
+                        }
                         cmd.Parameters.AddWithValue("@ai", m.a_id);
                         cmd.Parameters.AddWithValue("@bi", m.b_id);
                         Debug.WriteLine("MySQL table mitarbeiter: " + cmd.ExecuteNonQuery() + " rows affected!");
@@ -357,7 +377,8 @@ namespace WPF_DataExample
             if (M.nachname.Length == 0) { Debug.WriteLine(M.nachname + " fehlerhaft!"); return false; }
             if (M.geb_dat.Length != 10) { Debug.WriteLine(M.geb_dat + " fehlerhaft!"); return false; } // Beispiel: 1992-01-29
             if (M.gehalt.Length == 0) { Debug.WriteLine(M.gehalt + " fehlerhaft!"); return false; }
-            if (M.vorgesetzter_id == 0) { Debug.WriteLine(M.vorgesetzter_id + " fehlerhaft!"); return false; }
+            //TODO: UInt32 validieren möglich?
+            ///if (M.vorgesetzter_id == null) { Debug.WriteLine(M.vorgesetzter_id + " fehlerhaft!"); return false; }
             if (M.a_id == 0) { Debug.WriteLine(M.a_id + " fehlerhaft!"); return false; }
             if (M.b_id == 0) { Debug.WriteLine(M.b_id + " fehlerhaft!"); return false; }
             return true;
@@ -367,65 +388,71 @@ namespace WPF_DataExample
         #region Events:
         private void MenuItem_Mitarbeiter_Click(object sender, RoutedEventArgs e)
         {
-            DataGrid_Template_Delete.Header = Tabletype.Mitarbeiter;
-            DataGrid_Template_Update.Header = Tabletype.Mitarbeiter;
+            currentTable = Tabletype.Mitarbeiter;
+
             dataGrid.Visibility = Visibility.Visible;
             dataGridNeu.Visibility = Visibility.Hidden;
             saveNewMitarbeiter.Visibility = Visibility.Hidden;
             Grid_Mitarbeiter_Neu.Visibility = Visibility.Hidden;
+
             FillDataGrid(Tabletype.Mitarbeiter, dataGrid);
         }
         private void MenuItem_Beruf_Click(object sender, RoutedEventArgs e)
         {
-            DataGrid_Template_Delete.Header = Tabletype.Beruf;
-            DataGrid_Template_Update.Header = Tabletype.Beruf;
+            currentTable = Tabletype.Beruf;
+
             dataGrid.Visibility = Visibility.Visible;
             dataGridNeu.Visibility = Visibility.Hidden;
             saveNewMitarbeiter.Visibility = Visibility.Hidden;
             Grid_Mitarbeiter_Neu.Visibility = Visibility.Hidden;
+
             FillDataGrid(Tabletype.Beruf, dataGrid);
         }
         private void MenuItem_Abteilung_Click(object sender, RoutedEventArgs e)
         {
-            DataGrid_Template_Delete.Header = Tabletype.Abteilung;
-            DataGrid_Template_Update.Header = Tabletype.Abteilung;
+            currentTable = Tabletype.Abteilung;
+
             dataGrid.Visibility = Visibility.Visible;
             dataGridNeu.Visibility = Visibility.Hidden;
             saveNewMitarbeiter.Visibility = Visibility.Hidden;
             Grid_Mitarbeiter_Neu.Visibility = Visibility.Hidden;
+
             FillDataGrid(Tabletype.Abteilung, dataGrid);
 
         }
         private void MenuItem_Standort_Click(object sender, RoutedEventArgs e)
         {
-            DataGrid_Template_Delete.Header = Tabletype.Standort;
-            DataGrid_Template_Update.Header = Tabletype.Standort;
+            currentTable = Tabletype.Standort;
+
             dataGrid.Visibility = Visibility.Visible;
             dataGridNeu.Visibility = Visibility.Hidden;
             saveNewMitarbeiter.Visibility = Visibility.Hidden;
             Grid_Mitarbeiter_Neu.Visibility = Visibility.Hidden;
+            
             FillDataGrid(Tabletype.Standort, dataGrid);
 
         }
         private void MenuItem_Land_Click(object sender, RoutedEventArgs e)
         {
-            DataGrid_Template_Delete.Header = Tabletype.Land;
-            DataGrid_Template_Update.Header = Tabletype.Land;
+            currentTable = Tabletype.Land;
+
             dataGrid.Visibility = Visibility.Visible;
             dataGridNeu.Visibility = Visibility.Hidden;
             saveNewMitarbeiter.Visibility = Visibility.Hidden;
             Grid_Mitarbeiter_Neu.Visibility = Visibility.Hidden;
+
             FillDataGrid(Tabletype.Standort, dataGrid);
 
         }
         private void MenuItem_Region_Click(object sender, RoutedEventArgs e)
         {
-            DataGrid_Template_Delete.Header = Tabletype.Region;
-            DataGrid_Template_Update.Header = Tabletype.Region;
+            currentTable = Tabletype.Region;
+
             dataGrid.Visibility = Visibility.Visible;
             dataGridNeu.Visibility = Visibility.Hidden;
             saveNewMitarbeiter.Visibility = Visibility.Hidden;
             Grid_Mitarbeiter_Neu.Visibility = Visibility.Hidden;
+
             FillDataGrid(Tabletype.Region, dataGrid);
 
         }
@@ -443,7 +470,7 @@ namespace WPF_DataExample
         }
         private void Delete_Click(object sender, RoutedEventArgs e)
         {
-            if(DataGrid_Template_Delete.Header?.ToString() == "Mitarbeiter")
+            if(currentTable == Tabletype.Mitarbeiter)
             {
                 int i = dataGrid.SelectedIndex;
                 DataRowView v = (DataRowView)dataGrid.Items[i];
@@ -461,32 +488,21 @@ namespace WPF_DataExample
             TB_Geburtsdatum.Text = DatePicker_Geburtsdatum.SelectedDate?.ToString("yyyy-MM-dd");
         }
 
-        /// <summary>
-        /// DateTime Formatierung für SQL <-> WPF anpassen, damit diese konsistent ist.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void DataGrid_AutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e)
+        private void DataGrids_AutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e)
         {
+            // Passe Datumsformat an Tabellenstandard an:
             DataGridTextColumn column = e.Column as DataGridTextColumn;
             if (column.Header.ToString() == "geb_dat")
             {
                 Binding binding = column.Binding as Binding;
                 binding.StringFormat = "yyyy-MM-dd";
             }
-        }
-        /// <summary>
-        /// DateTime Formatierung für SQL <-> WPF anpassen, damit diese konsistent ist.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void DataGridNeu_AutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e)
-        {
-            DataGridTextColumn column = e.Column as DataGridTextColumn;
-            if (column.Header.ToString() == "geb_dat")
+
+            // Ersetze leere Felder in der Tabelle mit string.Empty anstatt null, um Fehler beim Editieren zu verhindern:
+            System.Windows.Controls.DataGridBoundColumn textCol = e.Column as System.Windows.Controls.DataGridBoundColumn;
+            if (textCol != null)
             {
-                Binding binding = column.Binding as Binding;
-                binding.StringFormat = "yyyy-MM-dd";
+                textCol.Binding.TargetNullValue = string.Empty;
             }
         }
         #endregion
@@ -516,8 +532,8 @@ namespace WPF_DataExample
             Abteilung,
             Standort,
             Land,
-            Region
-
+            Region,
+            NONE
         }
         #endregion
     }
