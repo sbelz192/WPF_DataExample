@@ -261,26 +261,51 @@ namespace WPF_DataExample
         /// Deletes the selected employee identified by 'm_id' from the database.
         /// </summary>
         /// <param name="m_id"></param>
-        private void DeleteSelectedMitarbeiter(UInt32 m_id)
+        private void DeleteSelectedMitarbeiter(UInt32 m_id, bool istVorgesetzter)
         {
             MessageBoxResult mbr = MessageBox.Show("Soll der gewählte Mitarbeiter wirklich gelöscht werden?", "Question", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (mbr == MessageBoxResult.Yes)
             {
-
                 try
                 {
                     string connstr = ConfigurationManager.ConnectionStrings["DBconnectionString_mv2"].ConnectionString;
                     using (MySqlConnection conn = new MySqlConnection(connstr))
                     {
                         conn.Open();
-
-                        using (MySqlCommand cmd = conn.CreateCommand())
+                        if (!istVorgesetzter)
                         {
-                            cmd.CommandText = "DELETE FROM mitarbeiter WHERE m_id =" + m_id + ";";
-                            Debug.WriteLine(cmd.CommandText);
-                            Debug.WriteLine("MySQL table mitarbeiter: " + cmd.ExecuteNonQuery() + " rows affected!");
+                            // Mitarbeiter entfernen:
+                            using (MySqlCommand cmd = conn.CreateCommand())
+                            {
+                                cmd.CommandText = "DELETE FROM mitarbeiter WHERE m_id =" + m_id + ";";
+                                Debug.WriteLine(cmd.CommandText);
+                                Debug.WriteLine("MySQL table mitarbeiter: " + cmd.ExecuteNonQuery() + " rows affected!");
+                            }
                         }
-
+                        else
+                        {
+                            // Referenzen auf Vorgesetzten entfernen:
+                            using (MySqlCommand cmd = conn.CreateCommand())
+                            {
+                                cmd.CommandText = "UPDATE mitarbeiter SET vorgesetzter_id = NULL WHERE vorgesetzter_id =" + m_id + ";";
+                                Debug.WriteLine(cmd.CommandText);
+                                Debug.WriteLine("MySQL table mitarbeiter: " + cmd.ExecuteNonQuery() + " rows affected!");
+                            }
+                            // Referenzen auf Abteilungsleiter entfernen:
+                            using (MySqlCommand cmd = conn.CreateCommand())
+                            {
+                                cmd.CommandText = "UPDATE abteilung SET abteilungsleiter = NULL WHERE abteilungsleiter =" + m_id + ";";
+                                Debug.WriteLine(cmd.CommandText);
+                                Debug.WriteLine("MySQL table mitarbeiter: " + cmd.ExecuteNonQuery() + " rows affected!");
+                            }
+                            // Mitarbeiter entfernen:
+                            using (MySqlCommand cmd = conn.CreateCommand())
+                            {
+                                cmd.CommandText = "DELETE FROM mitarbeiter WHERE m_id =" + m_id + ";";
+                                Debug.WriteLine(cmd.CommandText);
+                                Debug.WriteLine("MySQL table mitarbeiter: " + cmd.ExecuteNonQuery() + " rows affected!");
+                            }
+                        }
                         conn.Close();
                     }
                 }
@@ -470,12 +495,24 @@ namespace WPF_DataExample
         }
         private void Delete_Click(object sender, RoutedEventArgs e)
         {
-            if(currentTable == Tabletype.Mitarbeiter)
+            if (currentTable == Tabletype.Mitarbeiter)
             {
                 int i = dataGrid.SelectedIndex;
                 DataRowView v = (DataRowView)dataGrid.Items[i];
                 UInt32 s = (UInt32)v[0];
-                DeleteSelectedMitarbeiter(s);
+                if (v[5] == DBNull.Value ||v[5] == null)
+                {
+                    MessageBoxResult mbr = MessageBox.Show("Dieser Mitarbeiter ist Vorgesetzter - möchten Sie trotzdem alle Verweise auf diesen löschen?", "Achtung", MessageBoxButton.YesNoCancel);
+                    if (mbr == MessageBoxResult.Yes)
+                    {
+                        DeleteSelectedMitarbeiter(s, true);
+                    }
+                }
+                else
+                {
+                    DeleteSelectedMitarbeiter(s, false);
+                }
+                
             }
         }
         private void Update_Click(object sender, RoutedEventArgs e)
